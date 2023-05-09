@@ -3,7 +3,7 @@ FROM hashicorp/terraform:1.4
 
 WORKDIR /root
 
-COPY --chmod=755 entrypoint.sh entrypoint.sh
+ADD --chmod=755 entrypoint.sh entrypoint.sh
 COPY jhaas jhaas-terraform-config
 
 # Add Terraform
