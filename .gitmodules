@@ -1,0 +1,3 @@
+[submodule "jhaas"]
+	path = jhaas
+	url = git@git.computational.bio.uni-giessen.de:it/jhaas.git

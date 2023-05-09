@@ -1,0 +1,10 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_FORCE_HTTPS: "true"
+  GIT_SUBMODULE_DEPTH: 1
+
+test-sub-modules:
+  image: busybox
+  script:
+    - ls -alh /root
+    - [ -d jhaas ] && ls -alh jhaas
