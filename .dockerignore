@@ -1,0 +1,11 @@
+# This Repository
+/.git
+/.gitmodules
+/.gitlab-ci.yml
+/.dockerignore
+/Dockerfile
+/README.md
+
+# The JHaaS Terraform Submodule
+/jhaas/.git
+/jhaas/.gitignore
