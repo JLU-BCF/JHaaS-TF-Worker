@@ -3,7 +3,8 @@ FROM hashicorp/terraform:1.4
 
 WORKDIR /root
 
-ADD --chmod=755 entrypoint.sh entrypoint.sh
+COPY entrypoint.sh entrypoint.sh
+RUN chmod 755 entrypoint.sh
 COPY jhaas jhaas-terraform-config
 
 # Add Terraform
@@ -11,7 +12,8 @@ COPY jhaas jhaas-terraform-config
 # RUN unzip terraform.zip -d /usr/bin && rm -f terraform.zip
 
 # Add Minio
-ADD --chmod=755 https://dl.min.io/client/mc/release/linux-amd64/mc /usr/bin/mc
+ADD https://dl.min.io/client/mc/release/linux-amd64/mc /usr/bin/mc
+RUN chmod 755 /usr/bin/mc
 
 # TF and Minio config json will be injected as secret
 RUN mkdir .mc \
