@@ -6,7 +6,10 @@ variables:
   GOLANG_TAG: "1.20-bullseye"
   TF_VERSION: "latest"
   MC_VERSION: "latest"
-  GO_OPTS: "GOOS=linux GOARCH=amd64 CGO_ENABLED=0"
+  GOOS: "linux"
+  GOARCH: "amd64"
+  CGO_ENABLED: "0"
+  GOBIN: "$CI_PROJECT_DIR"
 
 stages:
   - build_binaries
@@ -19,8 +22,6 @@ build_tf:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
-    - export $GO_OPTS GOBIN="$CI_PROJECT_DIR/terraform"
-    - env
     - go install github.com/hashicorp/terraform@$TF_VERSION
   artifacts:
     paths:
@@ -33,8 +34,6 @@ build_mc:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
-    - export $GO_OPTS GOBIN="$CI_PROJECT_DIR/mc"
-    - env
     - go install github.com/minio/mc@$MC_VERSION
   artifacts:
     paths:
