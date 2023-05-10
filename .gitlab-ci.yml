@@ -1,21 +1,59 @@
 variables:
-  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_STRATEGY: "recursive"
   GIT_SUBMODULE_FORCE_HTTPS: "true"
-  GIT_SUBMODULE_DEPTH: 1
+  GIT_SUBMODULE_DEPTH: "1"
+  ALPINE_TAG: "3.17"
+  GOLANG_TAG: "1.20-bullseye"
+  TF_VERSION: "latest"
+  MC_VERSION: "latest"
+  GO_OPTS: "GOOS=linux GOARCH=amd64 CGO_ENABLED=0"
+
+stages:
+  - build_binaries
+  - build_image
+
+build_tf:
+  stage: build_binaries
+  image: golang:$GOLANG_TAG
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    - when: manual
+  script:
+    - $GO_OPTS GOBIN="$CI_PROJECT_DIR/terraform" go install github.com/hashicorp/terraform@$TF_VERSION
+  artifacts:
+    paths:
+      - terraform
+
+build_mc:
+  stage: build_binaries
+  image: golang:$GOLANG_TAG
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    - when: manual
+  script:
+    - $GO_OPTS GOBIN="$CI_PROJECT_DIR/mc" go install github.com/minio/mc@$MC_VERSION
+  artifacts:
+    paths:
+      - mc
+
 
 build_image:
+  stage: build_image
   image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
+  dependencies:
+    - build_tf
+    - build_mc
   script:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"},\"$HARBOR_HOST\":{\"username\":\"$HARBOR_USERNAME\",\"password\":\"$HARBOR_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor
       --context     "$CI_PROJECT_DIR"
-      --dockerfile  "$CI_PROJECT_DIR/Dockerfile"
+      --dockerfile  "$CI_PROJECT_DIR/Dockerfile.kaniko"
       --destination "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
       --destination "$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:$CI_COMMIT_REF_SLUG"
       --single-snapshot

@@ -1,0 +1,29 @@
+#######################
+#
+# This Dockerfile can only be used in CI Pipeline
+# as it depends on CI artifacts!
+#
+#######################
+
+ARG ALPINE_TAG=3.17
+
+# Use alpine as small base image for production usage
+FROM alpine:$ALPINE_TAG
+
+# Copy self-built binaries from previous stage
+COPY mc /usr/bin/mc
+COPY terraform /usr/bin/terraform
+
+# Copy over configuration
+WORKDIR /root
+COPY entrypoint.sh entrypoint.sh
+COPY jhaas jhaas-terraform-config
+
+# Upgrade base image packages
+# TF and MC config files will be injected as secrets, symlink them
+RUN apk upgrade --no-cache --purge \
+  && mkdir .mc \
+  && ln -fs /run/secrets/minio.secret /root/.mc/config.json \
+  && ln -fs /run/secrets/terraform.secret /root/.terraformrc
+
+# ENTRYPOINT ["/root/entrypoint.sh"]

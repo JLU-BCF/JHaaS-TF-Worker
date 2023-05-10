@@ -1,6 +1,6 @@
 # Self-build binaries, as official distribution
 # channels are enormously delayed regarding security patches
-FROM golang:1.20 AS BUILDER
+FROM golang:1.20-bullseye AS BUILDER
 
 # define Terraform (TF) and Minio Client (MC) Versions
 ARG TF_VERSION="v1.4.6"
