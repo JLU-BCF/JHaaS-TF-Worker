@@ -59,4 +59,5 @@ build_image:
       --dockerfile  "$CI_PROJECT_DIR/Dockerfile.kaniko"
       --destination "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
       --destination "$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:$CI_COMMIT_REF_SLUG"
+      --build-arg   "ALPINE_TAG=$ALPINE_TAG"
       --single-snapshot

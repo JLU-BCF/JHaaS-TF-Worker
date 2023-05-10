@@ -38,4 +38,4 @@ RUN apk upgrade --no-cache --purge \
   && ln -fs /run/secrets/minio.secret /root/.mc/config.json \
   && ln -fs /run/secrets/terraform.secret /root/.terraformrc
 
-# ENTRYPOINT ["/root/entrypoint.sh"]
+ENTRYPOINT ["/root/entrypoint.sh"]
