@@ -19,7 +19,9 @@ build_tf:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
-    - $GO_OPTS GOBIN="$CI_PROJECT_DIR/terraform" go install github.com/hashicorp/terraform@$TF_VERSION
+    - export $GO_OPTS GOBIN="$CI_PROJECT_DIR/terraform"
+    - env
+    - go install github.com/hashicorp/terraform@$TF_VERSION
   artifacts:
     paths:
       - terraform
@@ -31,7 +33,9 @@ build_mc:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
-    - $GO_OPTS GOBIN="$CI_PROJECT_DIR/mc" go install github.com/minio/mc@$MC_VERSION
+    - export $GO_OPTS GOBIN="$CI_PROJECT_DIR/mc"
+    - env
+    - go install github.com/minio/mc@$MC_VERSION
   artifacts:
     paths:
       - mc
