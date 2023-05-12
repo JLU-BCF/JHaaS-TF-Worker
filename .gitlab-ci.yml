@@ -4,8 +4,6 @@ variables:
   GIT_SUBMODULE_DEPTH: "1"
   ALPINE_TAG: "3.17"
   GOLANG_TAG: "1.20-bullseye"
-  TF_VERSION: "latest"
-  MC_VERSION: "latest"
   GOOS: "linux"
   GOARCH: "amd64"
   CGO_ENABLED: "0"
@@ -22,7 +20,14 @@ build_tf:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
+    - export TF_VERSION=$(cat .tf-version)
     - go install github.com/hashicorp/terraform@$TF_VERSION
+  cache:
+    key:
+      files:
+        - .tf-version
+    paths:
+      - terraform
   artifacts:
     paths:
       - terraform
@@ -34,11 +39,17 @@ build_mc:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
+    - export MC_VERSION=$(cat .mc-version)
     - go install github.com/minio/mc@$MC_VERSION
+  cache:
+    key:
+      files:
+        - .mc-version
+    paths:
+      - mc
   artifacts:
     paths:
       - mc
-
 
 build_image:
   stage: build_image
