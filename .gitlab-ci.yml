@@ -21,7 +21,7 @@ build_tf:
     - when: manual
   script:
     - export TF_VERSION=$(cat .tf-version)
-    - go install github.com/hashicorp/terraform@$TF_VERSION
+    - "[ -f terraform ] || go install github.com/hashicorp/terraform@$TF_VERSION"
   cache:
     key:
       files:
@@ -40,7 +40,7 @@ build_mc:
     - when: manual
   script:
     - export MC_VERSION=$(cat .mc-version)
-    - go install github.com/minio/mc@$MC_VERSION
+    - "[ -f mc ] || go install github.com/minio/mc@$MC_VERSION"
   cache:
     key:
       files:
