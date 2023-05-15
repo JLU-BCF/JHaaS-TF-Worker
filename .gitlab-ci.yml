@@ -8,18 +8,8 @@ variables:
   GOARCH: "amd64"
   CGO_ENABLED: "0"
   GOBIN: "$CI_PROJECT_DIR"
-
-cache:
-  - key:
-      files:
-        - ".mc-version"
-    paths:
-      - "mc"
-  - key:
-      files:
-        - ".tf-version"
-    paths:
-      - "terraform"
+  TF_VERSION: "v1.4.6"
+  MC_VERSION: "RELEASE.2023-05-04T18-10-16Z"
 
 stages:
   - build_binaries
@@ -32,8 +22,11 @@ build_tf:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
-    - export TF_VERSION=$(cat .tf-version)
     - "[ -f terraform ] || go install github.com/hashicorp/terraform@$TF_VERSION"
+  cache:
+    key: "terraform-$TF_VERSION"
+    paths:
+      - "terraform"
   artifacts:
     paths:
       - terraform
@@ -45,8 +38,11 @@ build_mc:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
-    - export MC_VERSION=$(cat .mc-version)
     - "[ -f mc ] || go install github.com/minio/mc@$MC_VERSION"
+  cache:
+    key: "minio-client-$MC_VERSION"
+    paths:
+      - "mc"
   artifacts:
     paths:
       - mc
