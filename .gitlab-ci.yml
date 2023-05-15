@@ -9,6 +9,18 @@ variables:
   CGO_ENABLED: "0"
   GOBIN: "$CI_PROJECT_DIR"
 
+cache:
+  - key:
+      files:
+        - ".mc-version"
+    paths:
+      - "mc"
+  - key:
+      files:
+        - ".tf-version"
+    paths:
+      - "terraform"
+
 stages:
   - build_binaries
   - build_image
@@ -22,12 +34,6 @@ build_tf:
   script:
     - export TF_VERSION=$(cat .tf-version)
     - "[ -f terraform ] || go install github.com/hashicorp/terraform@$TF_VERSION"
-  cache:
-    key:
-      files:
-        - .tf-version
-    paths:
-      - terraform
   artifacts:
     paths:
       - terraform
@@ -41,12 +47,6 @@ build_mc:
   script:
     - export MC_VERSION=$(cat .mc-version)
     - "[ -f mc ] || go install github.com/minio/mc@$MC_VERSION"
-  cache:
-    key:
-      files:
-        - .mc-version
-    paths:
-      - mc
   artifacts:
     paths:
       - mc
