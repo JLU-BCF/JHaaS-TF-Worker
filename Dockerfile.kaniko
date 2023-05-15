@@ -21,9 +21,6 @@ COPY jhaas jhaas-terraform-config
 
 # Upgrade base image packages
 # TF and MC config files will be injected as secrets, symlink them
-RUN apk upgrade --no-cache --purge \
-  && mkdir .mc \
-  && ln -fs /run/secrets/minio.secret /root/.mc/config.json \
-  && ln -fs /run/secrets/terraform.secret /root/.terraformrc
+RUN apk upgrade --no-cache --purge
 
 ENTRYPOINT ["/root/entrypoint.sh"]
