@@ -8,6 +8,14 @@
 ARG ALPINE_TAG=3.17
 
 # Use alpine as small base image for production usage
+FROM alpine:$ALPINE_TAG AS TF_INIT
+
+RUN apk add git
+COPY terraform /usr/bin/terraform
+COPY jhaas jhaas-terraform-config
+
+RUN /usr/bin/terraform -chdir=jhaas-terraform-config init
+
 FROM alpine:$ALPINE_TAG
 
 # Copy self-built binaries from previous stage
@@ -17,7 +25,7 @@ COPY terraform /usr/bin/terraform
 # Copy over configuration
 WORKDIR /root
 COPY entrypoint.sh entrypoint.sh
-COPY jhaas jhaas-terraform-config
+COPY --from=TF_INIT jhaas-terraform-config jhaas-terraform-config
 
 # Upgrade base image packages
 # TF and MC config files will be injected as secrets, symlink them
