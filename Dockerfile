@@ -17,6 +17,11 @@ RUN go install github.com/hashicorp/terraform@$TF_VERSION
 # install mc
 RUN go install github.com/minio/mc@$MC_VERSION
 
+# init terraform config
+WORKDIR /root
+COPY jhaas jhaas-terraform-config
+RUN /usr/bin/terraform -chdir=jhaas-terraform-config init
+
 ###########
 
 # Use alpine as small base image for production usage
@@ -29,13 +34,10 @@ COPY --from=BUILDER /go/bin/terraform /usr/bin/terraform
 # Copy over configuration
 WORKDIR /root
 COPY entrypoint.sh entrypoint.sh
-COPY jhaas jhaas-terraform-config
+COPY --from=BUILDER jhaas-terraform-config jhaas-terraform-config
 
 # Upgrade base image packages
 # TF and MC config files will be injected as secrets, symlink them
-RUN apk upgrade --no-cache --purge \
-  && mkdir .mc \
-  && ln -fs /run/secrets/minio.secret /root/.mc/config.json \
-  && ln -fs /run/secrets/terraform.secret /root/.terraformrc
+RUN apk upgrade --no-cache --purge
 
 ENTRYPOINT ["/root/entrypoint.sh"]
