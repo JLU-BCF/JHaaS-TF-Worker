@@ -15,14 +15,38 @@ then
   exit 1
 fi
 
+# Check env from configmap presence
+if [ -z $JHAAS_DOMAIN ] \
+|| [ -z $JHAAS_ISSUER ] \
+|| [ -z $JHAAS_AUTHENTIK_URL ] \
+|| [ -z $JHAAS_AUTHENTIK_TOKEN ] \
+|| [ -z $JHAAS_AUTHENTICATION_FLOW ] \
+|| [ -z $JHAAS_AUTHORIZATION_FLOW ]
+then
+  echo "Missing Config from ConfigMap! Exiting with failure code..." >&2
+  exit 2
+fi
+
 # Check secret presence
 SECRETS_PATH="${SECRETS_PATH:-/secrets}"
 S3_CONF="${S3_CONF:-minio.secret}"
 KUBECONFIG="${KUBECONFIG:-kubeconfig.secret}"
 if ! ([ -f "$SECRETS_PATH/$S3_CONF" ] && [ -f "$SECRETS_PATH/$KUBECONFIG" ]); then
   echo "Secrets are not configured properly! Exiting with failure code..." >&2
-  exit 2
+  exit 3
 fi
+
+# Setup TF Variables
+export TF_VAR_kubeconfig="$SECRETS_PATH/$KUBECONFIG"
+export TF_VAR_domain="$JHAAS_DOMAIN"
+export TF_VAR_issuer="$JHAAS_ISSUER"
+export TF_VAR_authentik_url="$JHAAS_AUTHENTIK_URL"
+export TF_VAR_authentik_token="$JHAAS_AUTHENTIK_TOKEN"
+export TF_VAR_authentication_flow="$JHAAS_AUTHENTICATION_FLOW"
+export TF_VAR_authorization_flow="$JHAAS_AUTHORIZATION_FLOW"
+export TF_VAR_name="$JH_SLUG"
+export TF_VAR_oidc_id="$JH_ID"
+export TF_VAR_jupyter_notebook_image="$JH_IMAGE"
 
 # Setup s3 sync folders
 S3_PERSIST=/root/tfstate
@@ -70,7 +94,7 @@ elif [ "$JH_ACTION" = "DEGRADE" ]; then
 else
 
   echo "Unknown action! Exiting with failure code..." >&2
-  exit 3
+  exit 4
 
 fi
 
