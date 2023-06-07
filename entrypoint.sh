@@ -1,27 +1,28 @@
 #!/bin/sh
 
 # Check env from backend presence
-if [ -z $JH_ACTION ] \
-|| [ -z $JH_ID ] \
-|| [ -z $JH_STATUS ] \
-|| [ -z $JH_SLUG ] \
-|| [ -z $JH_IMAGE ] \
-|| [ -z $JH_INSTANCE_FLAVOUR ] \
-|| [ -z $JH_INSTANCE_COUNT ] \
-|| [ -z $JH_DESC ] \
-|| [ -z $JH_CONTACT ]
+if [ -z "$JH_ACTION" ] \
+|| [ -z "$JH_ID" ] \
+|| [ -z "$JH_NAME" ] \
+|| [ -z "$JH_STATUS" ] \
+|| [ -z "$JH_SLUG" ] \
+|| [ -z "$JH_GROUP_ID" ] \
+|| [ -z "$JH_IMAGE" ] \
+|| [ -z "$JH_INSTANCE_FLAVOUR" ] \
+|| [ -z "$JH_INSTANCE_COUNT" ] \
+|| [ -z "$JH_CONTACT" ]
 then
   echo "Missing Config from JHaaS Backend! Exiting with failure code..." >&2
   exit 1
 fi
 
 # Check env from configmap presence
-if [ -z $JHAAS_DOMAIN ] \
-|| [ -z $JHAAS_ISSUER ] \
-|| [ -z $JHAAS_AUTHENTIK_URL ] \
-|| [ -z $JHAAS_AUTHENTIK_TOKEN ] \
-|| [ -z $JHAAS_AUTHENTICATION_FLOW ] \
-|| [ -z $JHAAS_AUTHORIZATION_FLOW ]
+if [ -z "$JHAAS_DOMAIN" ] \
+|| [ -z "$JHAAS_ISSUER" ] \
+|| [ -z "$JHAAS_AUTHENTIK_URL" ] \
+|| [ -z "$JHAAS_AUTHENTIK_TOKEN" ] \
+|| [ -z "$JHAAS_AUTHENTICATION_FLOW" ] \
+|| [ -z "$JHAAS_AUTHORIZATION_FLOW" ]
 then
   echo "Missing Config from ConfigMap! Exiting with failure code..." >&2
   exit 2
@@ -42,11 +43,17 @@ export TF_VAR_domain="$JHAAS_DOMAIN"
 export TF_VAR_issuer="$JHAAS_ISSUER"
 export TF_VAR_authentik_url="$JHAAS_AUTHENTIK_URL"
 export TF_VAR_authentik_token="$JHAAS_AUTHENTIK_TOKEN"
+export TF_VAR_authentik_jh_group_id="$JH_GROUP_ID"
 export TF_VAR_authentication_flow="$JHAAS_AUTHENTICATION_FLOW"
 export TF_VAR_authorization_flow="$JHAAS_AUTHORIZATION_FLOW"
 export TF_VAR_name="$JH_SLUG"
+export TF_VAR_jh_display_name="$JH_NAME"
 export TF_VAR_oidc_id="$JH_ID"
 export TF_VAR_jupyter_notebook_image="$JH_IMAGE"
+
+if [ ! -z "$JH_DESC" ]; then
+  export TF_VAR_jh_description="$JH_DESC"
+fi
 
 # Setup s3 sync folders
 S3_PERSIST=/root/tfstate
