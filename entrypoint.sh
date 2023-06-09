@@ -56,17 +56,26 @@ if [ ! -z "$JH_DESC" ]; then
 fi
 
 # Setup s3 sync folders
-S3_PERSIST=/root/tfstate
-S3_PATH=s3/tf-state
+S3_CONF_PREFIX="${S3_CONF_PREFIX:-s3}"
+S3_TF_STATE_BUCKET="${S3_TF_STATE_BUCKET:-tf-state}"
+S3_JH_SPECS_BUCKET="${S3_JH_SPECS_BUCKET:-jh-specs}"
+LOCAL_TF_STATE_DIR="${LOCAL_TF_STATE_DIR:-/root/tfstate}"
+LOCAL_JH_SPECS_DIR="${LOCAL_JH_SPECS_DIR:-/root/jhspecs}"
+S3_TF_STATE_PATH="${S3_CONF_PREFIX}/${S3_TF_STATE_BUCKET}/${JH_ID}"
+S3_JH_SPECS_PATH="${S3_CONF_PREFIX}/${S3_JH_SPECS_BUCKET}/${JH_ID}"
+JH_STATUS_FILE="${LOCAL_JH_SPECS_DIR}/JupyterHubRequestStatus"
 
 # Setup minio client config structure
 mkdir -p /root/.mc && ln -s "$SECRETS_PATH/$S3_CONF" /root/.mc/config.json
-mkdir -p "$S3_PERSIST"
+mkdir -p "${LOCAL_TF_STATE_DIR}"
+mkdir -p "${LOCAL_JH_SPECS_DIR}"
 
 # Create and/or sync bucket for jupyter hub
 set -e
-mc -C /root/.mc mb "$S3_PATH/$JH_ID"
-mc -C /root/.mc cp --recursive "$S3_PATH/$JH_ID/" "$S3_PERSIST/"
+mc -C /root/.mc mb "${S3_TF_STATE_PATH}"
+mc -C /root/.mc mb "${S3_JH_SPECS_PATH}"
+mc -C /root/.mc cp --recursive "${S3_TF_STATE_PATH}/" "${LOCAL_TF_STATE_DIR}/"
+mc -C /root/.mc cp --recursive "${S3_JH_SPECS_PATH}/" "${LOCAL_JH_SPECS_DIR}/"
 set +e
 
 # Run terraform stuff
@@ -74,29 +83,45 @@ if [ "$JH_ACTION" = "DEPLOY" ]; then
 
   # Create execution plan
   terraform -chdir="jhaas-terraform-config" plan \
-    -state="$S3_PERSIST/jh-deployment.tfstate" \
-    -out="$S3_PERSIST/jh-deployment.tfplan" \
-    > "$S3_PERSIST/jh-deployment.plan.log" \
-    2> "$S3_PERSIST/jh-deployment.plan.error.log"
+    -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
+    -out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfplan" \
+    > "${LOCAL_TF_STATE_DIR}/jh-deployment.plan.log" \
+    2> "${LOCAL_TF_STATE_DIR}/jh-deployment.plan.error.log"
 
-  # Apply execution plan
-  terraform -chdir="jhaas-terraform-config" apply \
-    -state="$S3_PERSIST/jh-deployment.tfstate" \
-    -state-out="$S3_PERSIST/jh-deployment.tfstate" \
-    -auto-approve \
-    "$S3_PERSIST/jh-deployment.tfplan" \
-    > "$S3_PERSIST/jh-deployment.deploy.log" \
-    2> "$S3_PERSIST/jh-deployment.deploy.error.log"
+  if [ "$?" = "0" ]; then
+    # Apply execution plan
+    terraform -chdir="jhaas-terraform-config" apply \
+      -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
+      -state-out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
+      -auto-approve \
+      "${LOCAL_TF_STATE_DIR}/jh-deployment.tfplan" \
+      > "${LOCAL_TF_STATE_DIR}/jh-deployment.deploy.log" \
+      2> "${LOCAL_TF_STATE_DIR}/jh-deployment.deploy.error.log"
+
+    if [ "$?" = "0" ]; then
+      echo -n "DEPLOYED" > "${JH_STATUS_FILE}"
+    else
+      echo -n "FAILED" > "${JH_STATUS_FILE}"
+    fi
+  else
+    echo -n "FAILED" > "${JH_STATUS_FILE}"
+  fi
 
 elif [ "$JH_ACTION" = "DEGRADE" ]; then
 
   # Apply execution plan
   terraform -chdir="jhaas-terraform-config" apply -destroy \
-    -state="$S3_PERSIST/jh-deployment.tfstate" \
-    -state-out="$S3_PERSIST/jh-deployment.tfstate" \
+    -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
+    -state-out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -auto-approve \
-    > "$S3_PERSIST/jh-deployment.degrade.log" \
-    2> "$S3_PERSIST/jh-deployment.degrade.error.log"
+    > "${LOCAL_TF_STATE_DIR}/jh-deployment.degrade.log" \
+    2> "${LOCAL_TF_STATE_DIR}/jh-deployment.degrade.error.log"
+
+  if [ "$?" = "0" ]; then
+    echo -n "DEGRATED" > "${JH_STATUS_FILE}"
+  else
+    echo -n "FAILED" > "${JH_STATUS_FILE}"
+  fi
 
 else
 
@@ -107,7 +132,14 @@ fi
 
 # Upload terraform state and logs
 while true; do
-  mc -C /root/.mc cp --recursive "$S3_PERSIST/" "$S3_PATH/$JH_ID/" && break
+  mc -C /root/.mc cp --recursive "${LOCAL_TF_STATE_DIR}/" "${S3_TF_STATE_PATH}/" && break
   echo "Could not save state! Try again in 5 min..."
+  sleep 300
+done
+
+# Upload JupyterHubRequestStatus
+while true; do
+  mc -C /root/.mc cp --recursive "${LOCAL_JH_SPECS_DIR}/" "${S3_JH_SPECS_PATH}/" && break
+  echo "Could not save JupyterHubRequestStatus! Try again in 5 min..."
   sleep 300
 done
