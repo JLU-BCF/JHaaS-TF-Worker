@@ -55,6 +55,10 @@ if [ ! -z "$JH_DESC" ]; then
   export TF_VAR_jh_description="$JH_DESC"
 fi
 
+if [ ! -z "$JHAAS_ICON" ]; then
+  export TF_VAR_jh_icon="$JHAAS_ICON"
+fi
+
 # Setup s3 sync folders
 S3_CONF_PREFIX="${S3_CONF_PREFIX:-s3}"
 S3_TF_STATE_BUCKET="${S3_TF_STATE_BUCKET:-tf-state}"
