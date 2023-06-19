@@ -1,28 +1,28 @@
 #!/bin/sh
 
 # Check env from backend presence
-if [ -z "$JH_ACTION" ] \
-|| [ -z "$JH_ID" ] \
-|| [ -z "$JH_NAME" ] \
-|| [ -z "$JH_STATUS" ] \
-|| [ -z "$JH_SLUG" ] \
-|| [ -z "$JH_GROUP_ID" ] \
-|| [ -z "$JH_IMAGE" ] \
-|| [ -z "$JH_INSTANCE_FLAVOUR" ] \
-|| [ -z "$JH_INSTANCE_COUNT" ] \
-|| [ -z "$JH_CONTACT" ]
+if [ -z "${JH_ACTION}" ] \
+|| [ -z "${JH_ID}" ] \
+|| [ -z "${JH_NAME}" ] \
+|| [ -z "${JH_STATUS}" ] \
+|| [ -z "${JH_SLUG}" ] \
+|| [ -z "${JH_GROUP_ID}" ] \
+|| [ -z "${JH_IMAGE}" ] \
+|| [ -z "${JH_INSTANCE_FLAVOUR}" ] \
+|| [ -z "${JH_INSTANCE_COUNT}" ] \
+|| [ -z "${JH_CONTACT}" ]
 then
   echo "Missing Config from JHaaS Backend! Exiting with failure code..." >&2
   exit 1
 fi
 
 # Check env from configmap presence
-if [ -z "$JHAAS_DOMAIN" ] \
-|| [ -z "$JHAAS_ISSUER" ] \
-|| [ -z "$JHAAS_AUTHENTIK_URL" ] \
-|| [ -z "$JHAAS_AUTHENTIK_TOKEN" ] \
-|| [ -z "$JHAAS_AUTHENTICATION_FLOW" ] \
-|| [ -z "$JHAAS_AUTHORIZATION_FLOW" ]
+if [ -z "${JHAAS_DOMAIN}" ] \
+|| [ -z "${JHAAS_ISSUER}" ] \
+|| [ -z "${JHAAS_AUTHENTIK_URL}" ] \
+|| [ -z "${JHAAS_AUTHENTIK_TOKEN}" ] \
+|| [ -z "${JHAAS_AUTHENTICATION_FLOW}" ] \
+|| [ -z "${JHAAS_AUTHORIZATION_FLOW}" ]
 then
   echo "Missing Config from ConfigMap! Exiting with failure code..." >&2
   exit 2
@@ -32,31 +32,31 @@ fi
 SECRETS_PATH="${SECRETS_PATH:-/secrets}"
 S3_CONF="${S3_CONF:-minio.secret}"
 KUBECONFIG="${KUBECONFIG:-kubeconfig.secret}"
-if ! ([ -f "$SECRETS_PATH/$S3_CONF" ] && [ -f "$SECRETS_PATH/$KUBECONFIG" ]); then
+if ! ([ -f "${SECRETS_PATH}/${S3_CONF}" ] && [ -f "${SECRETS_PATH}/${KUBECONFIG}" ]); then
   echo "Secrets are not configured properly! Exiting with failure code..." >&2
   exit 3
 fi
 
 # Setup TF Variables
-export TF_VAR_kubeconfig="$SECRETS_PATH/$KUBECONFIG"
-export TF_VAR_domain="$JHAAS_DOMAIN"
-export TF_VAR_issuer="$JHAAS_ISSUER"
-export TF_VAR_authentik_url="$JHAAS_AUTHENTIK_URL"
-export TF_VAR_authentik_token="$JHAAS_AUTHENTIK_TOKEN"
-export TF_VAR_authentik_jh_group_id="$JH_GROUP_ID"
-export TF_VAR_authentication_flow="$JHAAS_AUTHENTICATION_FLOW"
-export TF_VAR_authorization_flow="$JHAAS_AUTHORIZATION_FLOW"
-export TF_VAR_name="$JH_SLUG"
-export TF_VAR_jh_display_name="$JH_NAME"
-export TF_VAR_oidc_id="$JH_ID"
-export TF_VAR_jupyter_notebook_image="$JH_IMAGE"
+export TF_VAR_kubeconfig="${SECRETS_PATH}/${KUBECONFIG}"
+export TF_VAR_domain="${JHAAS_DOMAIN}"
+export TF_VAR_issuer="${JHAAS_ISSUER}"
+export TF_VAR_authentik_url="${JHAAS_AUTHENTIK_URL}"
+export TF_VAR_authentik_token="${JHAAS_AUTHENTIK_TOKEN}"
+export TF_VAR_authentik_jh_group_id="${JH_GROUP_ID}"
+export TF_VAR_authentication_flow="${JHAAS_AUTHENTICATION_FLOW}"
+export TF_VAR_authorization_flow="${JHAAS_AUTHORIZATION_FLOW}"
+export TF_VAR_name="${JH_SLUG}"
+export TF_VAR_jh_display_name="${JH_NAME}"
+export TF_VAR_oidc_id="${JH_ID}"
+export TF_VAR_jupyter_notebook_image="${JH_IMAGE}"
 
-if [ ! -z "$JH_DESC" ]; then
-  export TF_VAR_jh_description="$JH_DESC"
+if [ ! -z "${JH_DESC}" ]; then
+  export TF_VAR_jh_description="${JH_DESC}"
 fi
 
-if [ ! -z "$JHAAS_ICON" ]; then
-  export TF_VAR_jh_icon="$JHAAS_ICON"
+if [ ! -z "${JHAAS_ICON}" ]; then
+  export TF_VAR_jh_icon="${JHAAS_ICON}"
 fi
 
 # Setup s3 sync folders
@@ -70,7 +70,7 @@ S3_JH_SPECS_PATH="${S3_CONF_PREFIX}/${S3_JH_SPECS_BUCKET}/${JH_ID}"
 JH_STATUS_FILE="${LOCAL_JH_SPECS_DIR}/JupyterHubRequestStatus"
 
 # Setup minio client config structure
-mkdir -p /root/.mc && ln -s "$SECRETS_PATH/$S3_CONF" /root/.mc/config.json
+mkdir -p /root/.mc && ln -s "${SECRETS_PATH}/${S3_CONF}" /root/.mc/config.json
 mkdir -p "${LOCAL_TF_STATE_DIR}"
 mkdir -p "${LOCAL_JH_SPECS_DIR}"
 
@@ -83,7 +83,7 @@ mc -C /root/.mc cp --recursive "${S3_JH_SPECS_PATH}/" "${LOCAL_JH_SPECS_DIR}/"
 set +e
 
 # Run terraform stuff
-if [ "$JH_ACTION" = "DEPLOY" ]; then
+if [ "${JH_ACTION}" = "DEPLOY" ]; then
 
   # Create execution plan
   terraform -chdir="jhaas-terraform-config" plan \
@@ -111,7 +111,7 @@ if [ "$JH_ACTION" = "DEPLOY" ]; then
     echo -n "FAILED" > "${JH_STATUS_FILE}"
   fi
 
-elif [ "$JH_ACTION" = "DEGRADE" ]; then
+elif [ "${JH_ACTION}" = "DEGRADE" ]; then
 
   # Apply execution plan
   terraform -chdir="jhaas-terraform-config" apply -destroy \
