@@ -68,6 +68,7 @@ LOCAL_JH_SPECS_DIR="${LOCAL_JH_SPECS_DIR:-/root/jhspecs}"
 S3_TF_STATE_PATH="${S3_CONF_PREFIX}/${S3_TF_STATE_BUCKET}/${JH_ID}"
 S3_JH_SPECS_PATH="${S3_CONF_PREFIX}/${S3_JH_SPECS_BUCKET}/${JH_ID}"
 JH_STATUS_FILE="${LOCAL_JH_SPECS_DIR}/JupyterHubRequestStatus"
+JH_URL_FILE="${LOCAL_JH_SPECS_DIR}/JupyterHubUrl"
 
 # Setup minio client config structure
 mkdir -p /root/.mc && ln -s "${SECRETS_PATH}/${S3_CONF}" /root/.mc/config.json
@@ -104,6 +105,7 @@ if [ "${JH_ACTION}" = "DEPLOY" ]; then
 
     if [ "$?" = "0" ]; then
       echo -n "DEPLOYED" > "${JH_STATUS_FILE}"
+      echo -n "https://${JH_SLUG}.${JHAAS_DOMAIN}/" > "${JH_URL_FILE}"
     else
       echo -n "FAILED" > "${JH_STATUS_FILE}"
     fi
