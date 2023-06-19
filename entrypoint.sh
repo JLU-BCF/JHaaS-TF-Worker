@@ -59,6 +59,10 @@ if [ ! -z "${JHAAS_ICON}" ]; then
   export TF_VAR_jh_icon="${JHAAS_ICON}"
 fi
 
+if [ ! -z "${JH_NB_DEFAULT_URL}" ]; then
+  export TF_VAR_jupyter_notebook_default_url="${JH_NB_DEFAULT_URL}"
+fi
+
 # Setup s3 sync folders
 S3_CONF_PREFIX="${S3_CONF_PREFIX:-s3}"
 S3_TF_STATE_BUCKET="${S3_TF_STATE_BUCKET:-tf-state}"
