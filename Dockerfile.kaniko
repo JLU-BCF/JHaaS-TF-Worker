@@ -12,7 +12,7 @@ FROM alpine:$ALPINE_TAG AS TF_INIT
 
 RUN apk add git
 COPY terraform /usr/bin/terraform
-COPY jhaas jhaas-terraform-config
+COPY tf-config jhaas-terraform-config
 
 RUN /usr/bin/terraform -chdir=jhaas-terraform-config init
 

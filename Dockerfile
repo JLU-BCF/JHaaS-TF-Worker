@@ -19,7 +19,7 @@ RUN go install github.com/minio/mc@$MC_VERSION
 
 # init terraform config
 WORKDIR /root
-COPY jhaas jhaas-terraform-config
+COPY tf-config jhaas-terraform-config
 RUN /usr/bin/terraform -chdir=jhaas-terraform-config init
 
 ###########

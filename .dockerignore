@@ -7,5 +7,5 @@
 /README.md
 
 # The JHaaS Terraform Submodule
-/jhaas/.git
-/jhaas/.gitignore
+/tf-config/.git
+/tf-config/.gitignore
