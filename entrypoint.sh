@@ -1,5 +1,27 @@
 #!/bin/sh
 
+TF_DEFAULT_REGISTRY="app.terraform.io"
+TF_SANITIZED_REGISTRY="$(echo -n ${TF_REGISTRY:-${TF_DEFAULT_REGISTRY}} | tr '.' '_')"
+TF_CONF_DIR="tf-config"
+mkdir -p "${TF_CONF_DIR}"
+
+# Check TF Module to be loaded (e.g. JH Deployment)
+if [ -z ${TF_MODULE} ]; then
+  echo "Missing Terraform Module! Exiting with failure code..." >&2
+  exit 5
+fi
+
+if [ -z ${TF_REGISTRY} ]; then
+  echo "No registry for Terraform Module given. Assuming '${TF_DEFAULT_REGISTRY}'."
+fi
+
+if [ -z ${TF_ACCESS_TOKEN} ]; then
+  echo "No access token for Terraform Module given. Assuming a public module."
+  terraform -chdir="${TF_CONF_DIR}" init -from-module="${TF_MODULE}"
+else
+  env "TF_TOKEN_${TF_SANITIZED_REGISTRY}=${TF_ACCESS_TOKEN}" terraform init -from-module="${TF_MODULE}"
+fi
+
 # Check env from backend presence
 if [ -z "${JH_ACTION}" ] \
 || [ -z "${JH_ID}" ] \
@@ -91,7 +113,7 @@ set +e
 if [ "${JH_ACTION}" = "DEPLOY" ]; then
 
   # Create execution plan
-  terraform -chdir="jhaas-terraform-config" plan \
+  terraform -chdir="${TF_CONF_DIR}" plan \
     -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfplan" \
     > "${LOCAL_TF_STATE_DIR}/jh-deployment.plan.log" \
@@ -99,7 +121,7 @@ if [ "${JH_ACTION}" = "DEPLOY" ]; then
 
   if [ "$?" = "0" ]; then
     # Apply execution plan
-    terraform -chdir="jhaas-terraform-config" apply \
+    terraform -chdir="${TF_CONF_DIR}" apply \
       -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
       -state-out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
       -auto-approve \
@@ -120,7 +142,7 @@ if [ "${JH_ACTION}" = "DEPLOY" ]; then
 elif [ "${JH_ACTION}" = "DEGRADE" ]; then
 
   # Apply execution plan
-  terraform -chdir="jhaas-terraform-config" apply -destroy \
+  terraform -chdir="${TF_CONF_DIR}" apply -destroy \
     -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -state-out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -auto-approve \
