@@ -63,6 +63,27 @@ if [ ! -z "${JH_NB_DEFAULT_URL}" ]; then
   export TF_VAR_jupyter_notebook_default_url="${JH_NB_DEFAULT_URL}"
 fi
 
+if [ ! -z "${NB_RAM_GUARANTEE}" ] \
+&& [ ! -z "${NB_CPU_GUARANTEE}" ] \
+&& [ ! -z "${NB_RAM_LIMIT}" ] \
+&& [ ! -z "${NB_CPU_LIMIT}" ] \
+&& [ ! -z "${NB_COUNT_LIMIT}" ] \
+&& [ ! -z "${NB_HOME_SIZE}" ] \
+&& [ ! -z "${NB_HOME_MOUNT_PATH}" ] \
+&& [ ! -z "${NS_RAM_LIMIT}" ] \
+&& [ ! -z "${NS_CPU_LIMIT}" ]
+then
+  export TF_VAR_nb_ram_guarantee="${NB_RAM_GUARANTEE}"
+  export TF_VAR_nb_cpu_guarantee="${NB_CPU_GUARANTEE}"
+  export TF_VAR_nb_ram_limit="${NB_RAM_LIMIT}"
+  export TF_VAR_nb_cpu_limit="${NB_CPU_LIMIT}"
+  export TF_VAR_nb_count_limit="${NB_COUNT_LIMIT}"
+  export TF_VAR_nb_home_size="${NB_HOME_SIZE}"
+  export TF_VAR_nb_home_mount_path="${NB_HOME_MOUNT_PATH}"
+  export TF_VAR_ns_ram_limit="${NS_RAM_LIMIT}"
+  export TF_VAR_ns_cpu_limit="${NS_CPU_LIMIT}"
+fi
+
 # Setup s3 sync folders
 S3_CONF_PREFIX="${S3_CONF_PREFIX:-s3}"
 S3_TF_STATE_BUCKET="${S3_TF_STATE_BUCKET:-tf-state}"
@@ -86,6 +107,8 @@ mc -C /root/.mc mb "${S3_JH_SPECS_PATH}"
 mc -C /root/.mc cp --recursive "${S3_TF_STATE_PATH}/" "${LOCAL_TF_STATE_DIR}/"
 mc -C /root/.mc cp --recursive "${S3_JH_SPECS_PATH}/" "${LOCAL_JH_SPECS_DIR}/"
 set +e
+
+env > "${LOCAL_TF_STATE_DIR}/env.dump"
 
 # Run terraform stuff
 if [ "${JH_ACTION}" = "DEPLOY" ]; then
@@ -139,6 +162,15 @@ else
   exit 4
 
 fi
+
+for logfile in "${LOCAL_TF_STATE_DIR}"/*.log; do
+  echo '-----------------'
+  echo '|'
+  echo "| $logfile"
+  echo '|'
+  echo '-----------------'
+  cat "$logfile"
+done
 
 # Upload terraform state and logs
 while true; do
