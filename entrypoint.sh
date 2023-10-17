@@ -63,6 +63,10 @@ if [ ! -z "${JH_NB_DEFAULT_URL}" ]; then
   export TF_VAR_jupyter_notebook_default_url="${JH_NB_DEFAULT_URL}"
 fi
 
+if [ ! -z "${JH_ADMIN_ID}" ]; then
+  export TF_VAR_jh_admin_id="${JH_ADMIN_ID}"
+fi
+
 if [ ! -z "${NB_RAM_GUARANTEE}" ] \
 && [ ! -z "${NB_CPU_GUARANTEE}" ] \
 && [ ! -z "${NB_RAM_LIMIT}" ] \
