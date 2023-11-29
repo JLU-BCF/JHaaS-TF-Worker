@@ -8,8 +8,8 @@ variables:
   GOARCH: "amd64"
   CGO_ENABLED: "0"
   GOBIN: "$CI_PROJECT_DIR"
-  TF_VERSION: "v1.5.0"
-  MC_VERSION: "RELEASE.2023-06-15T15-08-26Z"
+  TF_VERSION: "v1.6.5"
+  MC_VERSION: "RELEASE.2023-11-20T16-30-59Z"
 
 stages:
   - build_binaries
