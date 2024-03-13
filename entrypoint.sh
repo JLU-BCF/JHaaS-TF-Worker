@@ -10,7 +10,8 @@ if [ -z "${JH_ACTION}" ] \
 || [ -z "${JH_IMAGE}" ] \
 || [ -z "${JH_INSTANCE_FLAVOUR}" ] \
 || [ -z "${JH_INSTANCE_COUNT}" ] \
-|| [ -z "${JH_CONTACT}" ]
+|| [ -z "${JH_CONTACT}" ] \
+|| [ -z "${JH_API_TOKEN}" ]
 then
   echo "Missing Config from JHaaS Backend! Exiting with failure code..." >&2
   exit 1
@@ -50,6 +51,7 @@ export TF_VAR_name="${JH_SLUG}"
 export TF_VAR_jh_display_name="${JH_NAME}"
 export TF_VAR_oidc_id="${JH_ID}"
 export TF_VAR_jupyter_notebook_image="${JH_IMAGE}"
+export TF_VAR_jh_api_token="${JH_API_TOKEN}"
 
 if [ ! -z "${JH_DESC}" ]; then
   export TF_VAR_jh_description="${JH_DESC}"
