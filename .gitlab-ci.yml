@@ -23,7 +23,7 @@ download_tofu:
     - echo "--------" ; echo "Desired tofu Version -- ${TOFU_VERSION}" ; echo "--------"
     - "[ -f tofu ] && echo '-------- using cache :) --------' && exit"
     - wget "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip"
-    - unzip "tofu_${TOFU_VERSION}_linux_amd64.zip"
+    - unzip "tofu_${TOFU_VERSION}_linux_amd64.zip" tofu
   cache:
     key: "tofu-${TOFU_VERSION}"
     paths:
@@ -42,7 +42,7 @@ download_s5cmd:
     - echo "--------" ; echo "Desired s5cmd Version -- ${S5CMD_VERSION}" ; echo "--------"
     - "[ -f s5cmd ] && echo '-------- using cache :) --------' && exit"
     - wget "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz"
-    - tar -xzf "s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz"
+    - tar -xzf "s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" s5cmd
   cache:
     key: "s5cmd-${S5CMD_VERSION}"
     paths:

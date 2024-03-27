@@ -14,11 +14,11 @@ RUN test -n "$TOFU_VERSION" && test -n "$S5CMD_VERSION"
 
 # Download and extract tofu
 RUN wget "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip" \
-  && unzip "tofu_${TOFU_VERSION}_linux_amd64.zip"
+  && unzip "tofu_${TOFU_VERSION}_linux_amd64.zip" tofu
 
 # Download and extract s5cmd
 RUN wget "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" \
-  && tar -xzf "s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz"
+  && tar -xzf "s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" s5cmd
 
 # Copy and init terraform config
 COPY tf-config jhaas-terraform-config
