@@ -17,7 +17,7 @@ download_tofu:
   stage: download_binaries
   image: alpine:${ALPINE_TAG}
   rules:
-    - if: ${CI_COMMIT_REF_NAME} == ${CI_DEFAULT_BRANCH}
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
     - echo "--------" ; echo "Desired tofu Version -- ${TOFU_VERSION}" ; echo "--------"
@@ -36,7 +36,7 @@ download_s5cmd:
   stage: download_binaries
   image: alpine:${ALPINE_TAG}
   rules:
-    - if: ${CI_COMMIT_REF_NAME} == ${CI_DEFAULT_BRANCH}
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
     - echo "--------" ; echo "Desired s5cmd Version -- ${S5CMD_VERSION}" ; echo "--------"
@@ -57,7 +57,7 @@ build_image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   rules:
-    - if: ${CI_COMMIT_REF_NAME} == ${CI_DEFAULT_BRANCH}
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   dependencies:
     - download_tofu
