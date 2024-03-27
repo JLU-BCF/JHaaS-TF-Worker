@@ -5,30 +5,32 @@
 #
 #######################
 
-ARG ALPINE_TAG=3.17
+ARG ALPINE_TAG=latest
 
 # Use alpine as small base image for production usage
-FROM alpine:$ALPINE_TAG AS TF_INIT
+FROM alpine:$ALPINE_TAG AS tofu_init
 
-RUN apk add git
-COPY terraform /usr/bin/terraform
+# Copy prebuild tofu binary from artifact cache
+COPY tofu /usr/bin/tofu
+
+# Copy raw tf config
 COPY tf-config jhaas-terraform-config
 
-RUN /usr/bin/terraform -chdir=jhaas-terraform-config init
+# Init the tf config
+RUN tofu -chdir=jhaas-terraform-config init
 
-FROM alpine:$ALPINE_TAG
+###########
 
-# Copy self-built binaries from previous stage
-COPY mc /usr/bin/mc
-COPY terraform /usr/bin/terraform
+# Use alpine as small base image for production usage
+FROM alpine:${ALPINE_TAG}
 
-# Copy over configuration
+# Copy prebuild binaries from artifact cache
+COPY s5cmd /usr/bin/s5cmd
+COPY tofu /usr/bin/tofu
+
+# Copy over terraform configuration
 WORKDIR /root
 COPY entrypoint.sh entrypoint.sh
-COPY --from=TF_INIT jhaas-terraform-config jhaas-terraform-config
-
-# Upgrade base image packages
-# TF and MC config files will be injected as secrets, symlink them
-RUN apk upgrade --no-cache --purge
+COPY --from=tofu_init /jhaas-terraform-config jhaas-terraform-config
 
 ENTRYPOINT ["/root/entrypoint.sh"]

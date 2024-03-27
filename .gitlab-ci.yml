@@ -1,53 +1,55 @@
 variables:
+  ### Versions
+  ALPINE_TAG: "latest"
+  TOFU_VERSION: "1.6.2"
+  S5CMD_VERSION: "2.2.2"
+  ### Clone Options
   GIT_SUBMODULE_STRATEGY: "recursive"
   GIT_SUBMODULE_FORCE_HTTPS: "true"
   GIT_SUBMODULE_DEPTH: "1"
-  ALPINE_TAG: "3.19"
-  GOLANG_TAG: "1.22-bookworm"
-  GOOS: "linux"
-  GOARCH: "amd64"
-  CGO_ENABLED: "0"
-  GOBIN: "$CI_PROJECT_DIR"
-  TF_VERSION: "v1.7.4"
-  MC_VERSION: "RELEASE.2024-03-09T06-43-06Z"
+  
 
 stages:
-  - build_binaries
+  - download_binaries
   - build_image
 
-build_tf:
-  stage: build_binaries
-  image: golang:$GOLANG_TAG
+download_tofu:
+  stage: download_binaries
+  image: alpine:${ALPINE_TAG}
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    - if: ${CI_COMMIT_REF_NAME} == ${CI_DEFAULT_BRANCH}
     - when: manual
   script:
-    - echo "--------" ; echo "Desired Terraform Version -- $TF_VERSION" ; echo "--------"
-    - "[ -f terraform ] || go install github.com/hashicorp/terraform@$TF_VERSION"
+    - echo "--------" ; echo "Desired tofu Version -- ${TOFU_VERSION}" ; echo "--------"
+    - "[ -f tofu ] && echo '-------- using cache :) --------' && exit"
+    - wget "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip"
+    - unzip "tofu_${TOFU_VERSION}_linux_amd64.zip"
   cache:
-    key: "terraform-$TF_VERSION"
+    key: "tofu-${TOFU_VERSION}"
     paths:
-      - "terraform"
+      - "tofu"
   artifacts:
     paths:
-      - terraform
+      - "tofu"
 
-build_mc:
-  stage: build_binaries
-  image: golang:$GOLANG_TAG
+download_s5cmd:
+  stage: download_binaries
+  image: alpine:${ALPINE_TAG}
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    - if: ${CI_COMMIT_REF_NAME} == ${CI_DEFAULT_BRANCH}
     - when: manual
   script:
-    - echo "--------" ; echo "Desired Minio Client Version -- $MC_VERSION" ; echo "--------"
-    - "[ -f mc ] || go install github.com/minio/mc@$MC_VERSION"
+    - echo "--------" ; echo "Desired s5cmd Version -- ${S5CMD_VERSION}" ; echo "--------"
+    - "[ -f s5cmd ] && echo '-------- using cache :) --------' && exit"
+    - wget "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz"
+    - tar -xzf "s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz"
   cache:
-    key: "minio-client-$MC_VERSION"
+    key: "s5cmd-${S5CMD_VERSION}"
     paths:
-      - "mc"
+      - "s5cmd"
   artifacts:
     paths:
-      - mc
+      - "s5cmd"
 
 build_image:
   stage: build_image
@@ -55,18 +57,17 @@ build_image:
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   rules:
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    - if: ${CI_COMMIT_REF_NAME} == ${CI_DEFAULT_BRANCH}
     - when: manual
   dependencies:
-    - build_tf
-    - build_mc
+    - download_tofu
+    - download_s5cmd
   script:
     - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"},\"$HARBOR_HOST\":{\"username\":\"$HARBOR_USERNAME\",\"password\":\"$HARBOR_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"username\":\"${CI_REGISTRY_USER}\",\"password\":\"${CI_REGISTRY_PASSWORD}\"},\"${HARBOR_HOST}\":{\"username\":\"${HARBOR_USERNAME}\",\"password\":\"${HARBOR_PASSWORD}\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor
-      --context     "$CI_PROJECT_DIR"
-      --dockerfile  "$CI_PROJECT_DIR/Dockerfile.kaniko"
-      --destination "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
-      --destination "$HARBOR_HOST/$HARBOR_PROJECT/$CI_PROJECT_NAME:$CI_COMMIT_REF_SLUG"
-      --build-arg   "ALPINE_TAG=$ALPINE_TAG"
-      --single-snapshot
+      --context     "${CI_PROJECT_DIR}"
+      --dockerfile  "${CI_PROJECT_DIR}/Dockerfile.kaniko"
+      --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
+      --destination "${HARBOR_HOST}/${HARBOR_PROJECT}/${CI_PROJECT_NAME}:${CI_COMMIT_REF_SLUG}"
+      --build-arg   "ALPINE_TAG=${ALPINE_TAG}"

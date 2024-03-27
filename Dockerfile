@@ -1,43 +1,41 @@
-# Self-build binaries, as official distribution
-# channels are enormously delayed regarding security patches
-FROM golang:1.20-bullseye AS BUILDER
+# MANDATORY
+ARG ALPINE_TAG=latest
 
-# define Terraform (TF) and Minio Client (MC) Versions
-ARG TF_VERSION="v1.4.6"
-ARG MC_VERSION="RELEASE.2023-05-04T18-10-16Z"
+# Download prebuild binaries for tofu and s5cmd
+FROM alpine:${ALPINE_TAG} as downloader
 
-# Go compiler options
-ENV GOOS=linux
-ENV GOARCH=amd64
-ENV CGO_ENABLED=0
+# MANDATORY
+# Define tofu and s5cmd versions
+ARG TOFU_VERSION
+ARG S5CMD_VERSION
 
-# install terraform
-RUN go install github.com/hashicorp/terraform@$TF_VERSION
+# Check if versions are set
+RUN test -n "$TOFU_VERSION" && test -n "$S5CMD_VERSION"
 
-# install mc
-RUN go install github.com/minio/mc@$MC_VERSION
+# Download and extract tofu
+RUN wget "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip" \
+  && unzip "tofu_${TOFU_VERSION}_linux_amd64.zip"
 
-# init terraform config
-WORKDIR /root
+# Download and extract s5cmd
+RUN wget "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" \
+  && tar -xzf "s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz"
+
+# Copy and init terraform config
 COPY tf-config jhaas-terraform-config
-RUN /usr/bin/terraform -chdir=jhaas-terraform-config init
+RUN ./tofu -chdir=jhaas-terraform-config init
 
 ###########
 
 # Use alpine as small base image for production usage
-FROM alpine:3.17
+FROM alpine:${ALPINE_TAG}
 
-# Copy self-built binaries from previous stage
-COPY --from=BUILDER /go/bin/mc /usr/bin/mc
-COPY --from=BUILDER /go/bin/terraform /usr/bin/terraform
+# Copy extracted binaries from previous stage
+COPY --from=downloader /tofu /usr/bin/tofu
+COPY --from=downloader /s5cmd /usr/bin/s5cmd
 
-# Copy over configuration
+# Copy over terraform configuration
 WORKDIR /root
 COPY entrypoint.sh entrypoint.sh
-COPY --from=BUILDER jhaas-terraform-config jhaas-terraform-config
-
-# Upgrade base image packages
-# TF and MC config files will be injected as secrets, symlink them
-RUN apk upgrade --no-cache --purge
+COPY --from=downloader /jhaas-terraform-config jhaas-terraform-config
 
 ENTRYPOINT ["/root/entrypoint.sh"]
