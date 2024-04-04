@@ -120,11 +120,11 @@ set +e
 
 env > "${LOCAL_TF_STATE_DIR}/env.dump"
 
-# Run terraform stuff
+# Run terraform stuff using openTofu
 if [ "${JH_ACTION}" = "DEPLOY" ]; then
 
   # Create execution plan
-  terraform -chdir="jhaas-terraform-config" plan \
+  tofu -chdir="jhaas-terraform-config" plan \
     -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfplan" \
     > "${LOCAL_TF_STATE_DIR}/jh-deployment.plan.log" \
@@ -132,7 +132,7 @@ if [ "${JH_ACTION}" = "DEPLOY" ]; then
 
   if [ "$?" = "0" ]; then
     # Apply execution plan
-    terraform -chdir="jhaas-terraform-config" apply \
+    tofu -chdir="jhaas-terraform-config" apply \
       -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
       -state-out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
       -auto-approve \
@@ -153,7 +153,7 @@ if [ "${JH_ACTION}" = "DEPLOY" ]; then
 elif [ "${JH_ACTION}" = "DEGRADE" ]; then
 
   # Apply execution plan
-  terraform -chdir="jhaas-terraform-config" apply -destroy \
+  tofu -chdir="jhaas-terraform-config" apply -destroy \
     -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -state-out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -auto-approve \
@@ -182,7 +182,7 @@ for logfile in "${LOCAL_TF_STATE_DIR}"/*.log; do
   cat "$logfile"
 done
 
-# Upload terraform state and logs
+# Upload tofu state and logs
 while true; do
   rclone sync "${LOCAL_TF_STATE_DIR}" "${S3_TF_STATE_PATH}" && break
   echo "Could not save state! Try again in 5 min..."
