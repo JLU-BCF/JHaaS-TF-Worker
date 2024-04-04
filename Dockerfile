@@ -1,43 +1,46 @@
-# Self-build binaries, as official distribution
-# channels are enormously delayed regarding security patches
-FROM golang:1.20-bullseye AS BUILDER
+# MANDATORY
+ARG ALPINE_TAG=latest
 
-# define Terraform (TF) and Minio Client (MC) Versions
-ARG TF_VERSION="v1.4.6"
-ARG MC_VERSION="RELEASE.2023-05-04T18-10-16Z"
+# Download prebuild binaries for tofu and rclone
+FROM alpine:${ALPINE_TAG} as downloader
 
-# Go compiler options
-ENV GOOS=linux
-ENV GOARCH=amd64
-ENV CGO_ENABLED=0
-
-# install terraform
-RUN go install github.com/hashicorp/terraform@$TF_VERSION
-
-# install mc
-RUN go install github.com/minio/mc@$MC_VERSION
-
-# init terraform config
+# Run stuff in root homedir
 WORKDIR /root
+
+# MANDATORY
+# Define tofu and rclone versions
+ARG TOFU_VERSION
+ARG RCLONE_VERSION
+
+# Check if versions are set
+RUN test -n "$TOFU_VERSION" && test -n "$RCLONE_VERSION"
+
+# Download and extract tofu
+RUN wget "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip" \
+  && unzip -j "tofu_${TOFU_VERSION}_linux_amd64.zip" "tofu"
+
+# Download and extract rclone
+RUN wget "https://github.com/rclone/rclone/releases/download/v${RCLONE_VERSION}/rclone-v${RCLONE_VERSION}-linux-amd64.zip" \
+  && unzip -j "rclone-v${RCLONE_VERSION}-linux-amd64.zip" "rclone-v${RCLONE_VERSION}-linux-amd64/rclone"
+
+# Copy and init terraform config
 COPY tf-config jhaas-terraform-config
-RUN /usr/bin/terraform -chdir=jhaas-terraform-config init
+RUN ./tofu -chdir=jhaas-terraform-config init
 
 ###########
 
 # Use alpine as small base image for production usage
-FROM alpine:3.17
+FROM alpine:${ALPINE_TAG}
 
-# Copy self-built binaries from previous stage
-COPY --from=BUILDER /go/bin/mc /usr/bin/mc
-COPY --from=BUILDER /go/bin/terraform /usr/bin/terraform
-
-# Copy over configuration
+# Run stuff in root homedir
 WORKDIR /root
-COPY entrypoint.sh entrypoint.sh
-COPY --from=BUILDER jhaas-terraform-config jhaas-terraform-config
 
-# Upgrade base image packages
-# TF and MC config files will be injected as secrets, symlink them
-RUN apk upgrade --no-cache --purge
+# Copy extracted binaries from previous stage
+COPY --from=downloader /root/tofu /usr/bin/tofu
+COPY --from=downloader /root/rclone /usr/bin/rclone
+
+# Copy over terraform configuration
+COPY entrypoint.sh entrypoint.sh
+COPY --from=downloader /root/jhaas-terraform-config jhaas-terraform-config
 
 ENTRYPOINT ["/root/entrypoint.sh"]

@@ -31,7 +31,7 @@ fi
 
 # Check secret presence
 SECRETS_PATH="${SECRETS_PATH:-/secrets}"
-S3_CONF="${S3_CONF:-minio.secret}"
+S3_CONF="${S3_CONF:-s3.secret}"
 KUBECONFIG="${KUBECONFIG:-kubeconfig.secret}"
 if ! ([ -f "${SECRETS_PATH}/${S3_CONF}" ] && [ -f "${SECRETS_PATH}/${KUBECONFIG}" ]); then
   echo "Secrets are not configured properly! Exiting with failure code..." >&2
@@ -100,31 +100,31 @@ S3_TF_STATE_BUCKET="${S3_TF_STATE_BUCKET:-tf-state}"
 S3_JH_SPECS_BUCKET="${S3_JH_SPECS_BUCKET:-jh-specs}"
 LOCAL_TF_STATE_DIR="${LOCAL_TF_STATE_DIR:-/root/tfstate}"
 LOCAL_JH_SPECS_DIR="${LOCAL_JH_SPECS_DIR:-/root/jhspecs}"
-S3_TF_STATE_PATH="${S3_CONF_PREFIX}/${S3_TF_STATE_BUCKET}/${JH_ID}"
-S3_JH_SPECS_PATH="${S3_CONF_PREFIX}/${S3_JH_SPECS_BUCKET}/${JH_ID}"
+S3_TF_STATE_PATH="${S3_CONF_PREFIX}:${S3_TF_STATE_BUCKET}/${JH_ID}"
+S3_JH_SPECS_PATH="${S3_CONF_PREFIX}:${S3_JH_SPECS_BUCKET}/${JH_ID}"
 JH_STATUS_FILE="${LOCAL_JH_SPECS_DIR}/JupyterHubRequestStatus"
 JH_URL_FILE="${LOCAL_JH_SPECS_DIR}/JupyterHubUrl"
 
 # Setup minio client config structure
-mkdir -p /root/.mc && ln -s "${SECRETS_PATH}/${S3_CONF}" /root/.mc/config.json
+export RCLONE_CONFIG="${SECRETS_PATH}/${S3_CONF}"
 mkdir -p "${LOCAL_TF_STATE_DIR}"
 mkdir -p "${LOCAL_JH_SPECS_DIR}"
 
 # Create and/or sync bucket for jupyter hub
 set -e
-mc -C /root/.mc mb "${S3_TF_STATE_PATH}"
-mc -C /root/.mc mb "${S3_JH_SPECS_PATH}"
-mc -C /root/.mc cp --recursive "${S3_TF_STATE_PATH}/" "${LOCAL_TF_STATE_DIR}/"
-mc -C /root/.mc cp --recursive "${S3_JH_SPECS_PATH}/" "${LOCAL_JH_SPECS_DIR}/"
+rclone mkdir "${S3_TF_STATE_PATH}"
+rclone mkdir "${S3_JH_SPECS_PATH}"
+rclone sync "${S3_TF_STATE_PATH}" "${LOCAL_TF_STATE_DIR}"
+rclone sync "${S3_JH_SPECS_PATH}" "${LOCAL_JH_SPECS_DIR}"
 set +e
 
 env > "${LOCAL_TF_STATE_DIR}/env.dump"
 
-# Run terraform stuff
+# Run terraform stuff using openTofu
 if [ "${JH_ACTION}" = "DEPLOY" ]; then
 
   # Create execution plan
-  terraform -chdir="jhaas-terraform-config" plan \
+  tofu -chdir="jhaas-terraform-config" plan \
     -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfplan" \
     > "${LOCAL_TF_STATE_DIR}/jh-deployment.plan.log" \
@@ -132,7 +132,7 @@ if [ "${JH_ACTION}" = "DEPLOY" ]; then
 
   if [ "$?" = "0" ]; then
     # Apply execution plan
-    terraform -chdir="jhaas-terraform-config" apply \
+    tofu -chdir="jhaas-terraform-config" apply \
       -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
       -state-out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
       -auto-approve \
@@ -153,7 +153,7 @@ if [ "${JH_ACTION}" = "DEPLOY" ]; then
 elif [ "${JH_ACTION}" = "DEGRADE" ]; then
 
   # Apply execution plan
-  terraform -chdir="jhaas-terraform-config" apply -destroy \
+  tofu -chdir="jhaas-terraform-config" apply -destroy \
     -state="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -state-out="${LOCAL_TF_STATE_DIR}/jh-deployment.tfstate" \
     -auto-approve \
@@ -182,16 +182,16 @@ for logfile in "${LOCAL_TF_STATE_DIR}"/*.log; do
   cat "$logfile"
 done
 
-# Upload terraform state and logs
+# Upload tofu state and logs
 while true; do
-  mc -C /root/.mc cp --recursive "${LOCAL_TF_STATE_DIR}/" "${S3_TF_STATE_PATH}/" && break
+  rclone sync "${LOCAL_TF_STATE_DIR}" "${S3_TF_STATE_PATH}" && break
   echo "Could not save state! Try again in 5 min..."
   sleep 300
 done
 
 # Upload JupyterHubRequestStatus
 while true; do
-  mc -C /root/.mc cp --recursive "${LOCAL_JH_SPECS_DIR}/" "${S3_JH_SPECS_PATH}/" && break
+  rclone sync "${LOCAL_JH_SPECS_DIR}" "${S3_JH_SPECS_PATH}" && break
   echo "Could not save JupyterHubRequestStatus! Try again in 5 min..."
   sleep 300
 done
