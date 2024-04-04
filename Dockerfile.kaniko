@@ -10,6 +10,9 @@ ARG ALPINE_TAG=latest
 # Use alpine as small base image for production usage
 FROM alpine:$ALPINE_TAG AS tofu_init
 
+# Run stuff in root homedir
+WORKDIR /root
+
 # Copy prebuild tofu binary from artifact cache
 COPY tofu /usr/bin/tofu
 
@@ -24,13 +27,15 @@ RUN tofu -chdir=jhaas-terraform-config init
 # Use alpine as small base image for production usage
 FROM alpine:${ALPINE_TAG}
 
+# Run stuff in root homedir
+WORKDIR /root
+
 # Copy prebuild binaries from artifact cache
-COPY s5cmd /usr/bin/s5cmd
+COPY rclone /usr/bin/rclone
 COPY tofu /usr/bin/tofu
 
 # Copy over terraform configuration
-WORKDIR /root
 COPY entrypoint.sh entrypoint.sh
-COPY --from=tofu_init /jhaas-terraform-config jhaas-terraform-config
+COPY --from=tofu_init /root/jhaas-terraform-config jhaas-terraform-config
 
 ENTRYPOINT ["/root/entrypoint.sh"]

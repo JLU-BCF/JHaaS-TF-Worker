@@ -2,7 +2,7 @@ variables:
   ### Versions
   ALPINE_TAG: "latest"
   TOFU_VERSION: "1.6.2"
-  S5CMD_VERSION: "2.2.2"
+  RCLONE_VERSION: "1.66.0"
   ### Clone Options
   GIT_SUBMODULE_STRATEGY: "recursive"
   GIT_SUBMODULE_FORCE_HTTPS: "true"
@@ -32,24 +32,24 @@ download_tofu:
     paths:
       - "tofu"
 
-download_s5cmd:
+download_rclone:
   stage: download_binaries
   image: alpine:${ALPINE_TAG}
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
     - when: manual
   script:
-    - echo "--------" ; echo "Desired s5cmd Version -- ${S5CMD_VERSION}" ; echo "--------"
-    - "[ -f s5cmd ] && echo '-------- using cache :) --------' && exit"
-    - wget "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz"
-    - tar -xzf "s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" s5cmd
+    - echo "--------" ; echo "Desired rclone Version -- ${RCLONE_VERSION}" ; echo "--------"
+    - "[ -f rclone ] && echo '-------- using cache :) --------' && exit"
+    - wget "https://github.com/rclone/rclone/releases/download/v${RCLONE_VERSION}/rclone-v${RCLONE_VERSION}-linux-amd64.zip"
+    - unzip -j "rclone-v${RCLONE_VERSION}-linux-amd64.zip" "rclone-v${RCLONE_VERSION}-linux-amd64/rclone"
   cache:
-    key: "s5cmd-${S5CMD_VERSION}"
+    key: "rclone-${RCLONE_VERSION}"
     paths:
-      - "s5cmd"
+      - "rclone"
   artifacts:
     paths:
-      - "s5cmd"
+      - "rclone"
 
 build_image:
   stage: build_image
@@ -61,7 +61,7 @@ build_image:
     - when: manual
   dependencies:
     - download_tofu
-    - download_s5cmd
+    - download_rclone
   script:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"username\":\"${CI_REGISTRY_USER}\",\"password\":\"${CI_REGISTRY_PASSWORD}\"},\"${HARBOR_HOST}\":{\"username\":\"${HARBOR_USERNAME}\",\"password\":\"${HARBOR_PASSWORD}\"}}}" > /kaniko/.docker/config.json
