@@ -1,8 +1,8 @@
 variables:
   ### Versions
   ALPINE_TAG: "latest"
-  TOFU_VERSION: "1.6.2"
-  RCLONE_VERSION: "1.66.0"
+  TOFU_VERSION: "1.7.3"
+  RCLONE_VERSION: "1.67.0"
   ### Clone Options
   GIT_SUBMODULE_STRATEGY: "recursive"
   GIT_SUBMODULE_FORCE_HTTPS: "true"

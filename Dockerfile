@@ -2,7 +2,7 @@
 ARG ALPINE_TAG=latest
 
 # Download prebuild binaries for tofu and rclone
-FROM alpine:${ALPINE_TAG} as downloader
+FROM alpine:${ALPINE_TAG} AS downloader
 
 # Run stuff in root homedir
 WORKDIR /root
