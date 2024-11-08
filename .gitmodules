@@ -1,3 +1,3 @@
 [submodule "tf-config"]
 	path = tf-config
-	url = git@git.computational.bio.uni-giessen.de:jhaas/tf-config.git
+	url = https://github.com/JLU-BCF/JHaaS-TF-Config.git
