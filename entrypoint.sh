@@ -23,7 +23,8 @@ if [ -z "${JHAAS_DOMAIN}" ] \
 || [ -z "${JHAAS_AUTHENTIK_URL}" ] \
 || [ -z "${JHAAS_AUTHENTIK_TOKEN}" ] \
 || [ -z "${JHAAS_AUTHENTICATION_FLOW}" ] \
-|| [ -z "${JHAAS_AUTHORIZATION_FLOW}" ]
+|| [ -z "${JHAAS_AUTHORIZATION_FLOW}" ] \
+|| [ -z "${JHAAS_INVALIDATION_FLOW}" ]
 then
   echo "Missing Config from ConfigMap! Exiting with failure code..." >&2
   exit 2
@@ -47,6 +48,7 @@ export TF_VAR_authentik_token="${JHAAS_AUTHENTIK_TOKEN}"
 export TF_VAR_authentik_jh_group_id="${JH_GROUP_ID}"
 export TF_VAR_authentication_flow="${JHAAS_AUTHENTICATION_FLOW}"
 export TF_VAR_authorization_flow="${JHAAS_AUTHORIZATION_FLOW}"
+export TF_VAR_invalidation_flow="${JHAAS_INVALIDATION_FLOW}"
 export TF_VAR_name="${JH_SLUG}"
 export TF_VAR_jh_display_name="${JH_NAME}"
 export TF_VAR_oidc_id="${JH_ID}"
