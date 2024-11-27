@@ -75,6 +75,18 @@ if [ ! -z "${JH_ADMIN_ID}" ]; then
   export TF_VAR_jh_admin_id="${JH_ADMIN_ID}"
 fi
 
+if [ ! -z "${JH_PLACEHOLDER_REPLICAS}" ]; then
+  export TF_VAR_jh_placeholder_replicas="${JH_PLACEHOLDER_REPLICAS}"
+fi
+
+if [ ! -z "${JH_CONCURRENT_SPAWN_LIMIT}" ]; then
+  export TF_VAR_jh_concurrent_spawn_limit="${JH_CONCURRENT_SPAWN_LIMIT}"
+fi
+
+if [ ! -z "${NB_START_TIMEOUT}" ]; then
+  export TF_VAR_nb_start_timeout="${NB_START_TIMEOUT}"
+fi
+
 if [ ! -z "${NB_RAM_GUARANTEE}" ] \
 && [ ! -z "${NB_CPU_GUARANTEE}" ] \
 && [ ! -z "${NB_RAM_LIMIT}" ] \
