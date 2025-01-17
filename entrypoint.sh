@@ -87,6 +87,14 @@ if [ ! -z "${NB_START_TIMEOUT}" ]; then
   export TF_VAR_nb_start_timeout="${NB_START_TIMEOUT}"
 fi
 
+if [ ! -z "${S3_DATA_SECRET_NAME}" ]; then
+  export TF_VAR_secret_name="${S3_DATA_SECRET_NAME}"
+fi
+
+if [ ! -z "${S3_DATA_SECRET_NAMESPACE}" ]; then
+  export TF_VAR_secret_namespace="${S3_DATA_SECRET_NAMESPACE}"
+fi
+
 if [ ! -z "${NB_RAM_GUARANTEE}" ] \
 && [ ! -z "${NB_CPU_GUARANTEE}" ] \
 && [ ! -z "${NB_RAM_LIMIT}" ] \
