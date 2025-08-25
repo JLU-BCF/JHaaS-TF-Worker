@@ -1,33 +1,26 @@
-#!/bin/sh
+#!/bin/bash
 
-# Check env from backend presence
-if [ -z "${JH_ACTION}" ] \
-|| [ -z "${JH_ID}" ] \
-|| [ -z "${JH_NAME}" ] \
-|| [ -z "${JH_STATUS}" ] \
-|| [ -z "${JH_SLUG}" ] \
-|| [ -z "${JH_GROUP_ID}" ] \
-|| [ -z "${JH_IMAGE}" ] \
-|| [ -z "${JH_INSTANCE_FLAVOUR}" ] \
-|| [ -z "${JH_INSTANCE_COUNT}" ] \
-|| [ -z "${JH_CONTACT}" ] \
-|| [ -z "${JH_API_TOKEN}" ]
-then
-  echo "Missing Config from JHaaS Backend! Exiting with failure code..." >&2
+MANDATORY_BACKEND_VARS='JH_ACTION JH_ID JH_NAME JH_STATUS JH_SLUG JH_GROUP_ID JH_IMAGE JH_INSTANCE_FLAVOUR JH_INSTANCE_COUNT JH_CONTACT JH_API_TOKEN'
+MANDATORY_CONFIG_VARS='JHAAS_DOMAIN JHAAS_ISSUER JHAAS_AUTHENTIK_URL JHAAS_AUTHENTIK_TOKEN JHAAS_AUTHENTICATION_FLOW JHAAS_AUTHORIZATION_FLOW JHAAS_INVALIDATION_FLOW'
+MANDATORY_MISSING=0
+
+for ENVIRON in $MANDATORY_BACKEND_VARS ; do
+  if [ -z "${!ENVIRON}" ]; then
+    ((MANDATORY_MISSING++))
+    echo "Mandatory variable $ENVIRON from Backend is missing!" >&2
+  fi
+done
+
+for ENVIRON in $MANDATORY_CONFIG_VARS ; do
+  if [ -z "${!ENVIRON}" ]; then
+    ((MANDATORY_MISSING++))
+    echo "Mandatory variable $ENVIRON from ConfigMap is missing!" >&2
+  fi
+done
+
+if [ $MANDATORY_MISSING -gt 0 ] ; then
+  echo "There are $MANDATORY_MISSING mandatory variables missing! Exiting with failure code..." >&2
   exit 1
-fi
-
-# Check env from configmap presence
-if [ -z "${JHAAS_DOMAIN}" ] \
-|| [ -z "${JHAAS_ISSUER}" ] \
-|| [ -z "${JHAAS_AUTHENTIK_URL}" ] \
-|| [ -z "${JHAAS_AUTHENTIK_TOKEN}" ] \
-|| [ -z "${JHAAS_AUTHENTICATION_FLOW}" ] \
-|| [ -z "${JHAAS_AUTHORIZATION_FLOW}" ] \
-|| [ -z "${JHAAS_INVALIDATION_FLOW}" ]
-then
-  echo "Missing Config from ConfigMap! Exiting with failure code..." >&2
-  exit 2
 fi
 
 # Check secret presence
@@ -55,65 +48,38 @@ export TF_VAR_oidc_id="${JH_ID}"
 export TF_VAR_jupyter_notebook_image="${JH_IMAGE}"
 export TF_VAR_jh_api_token="${JH_API_TOKEN}"
 
-if [ ! -z "${JH_CHART_VERSION}" ]; then
-  export TF_VAR_jh_chart_version="${JH_CHART_VERSION}"
-fi
+declare -A OPTIONAL_TF_VAR_MAP
+OPTIONAL_TF_VAR_MAP[JH_CHART_VERSION]="TF_VAR_jh_chart_version"
+OPTIONAL_TF_VAR_MAP[JH_DESC]="TF_VAR_jh_description"
+OPTIONAL_TF_VAR_MAP[JHAAS_ICON]="TF_VAR_jh_icon"
+OPTIONAL_TF_VAR_MAP[JH_NB_DEFAULT_URL]="TF_VAR_jupyter_notebook_default_url"
+OPTIONAL_TF_VAR_MAP[JH_ADMIN_ID]="TF_VAR_jh_admin_id"
+OPTIONAL_TF_VAR_MAP[JH_PLACEHOLDER_REPLICAS]="TF_VAR_jh_placeholder_replicas"
+OPTIONAL_TF_VAR_MAP[JH_CONCURRENT_SPAWN_LIMIT]="TF_VAR_jh_concurrent_spawn_limit"
+OPTIONAL_TF_VAR_MAP[NB_START_TIMEOUT]="TF_VAR_nb_start_timeout"
+OPTIONAL_TF_VAR_MAP[S3_DATA_SECRET_NAME]="TF_VAR_secret_name"
+OPTIONAL_TF_VAR_MAP[S3_DATA_SECRET_NAMESPACE]="TF_VAR_secret_namespace"
 
-if [ ! -z "${JH_DESC}" ]; then
-  export TF_VAR_jh_description="${JH_DESC}"
-fi
+for ENVIRON in "${!OPTIONAL_TF_VAR_MAP[@]}"; do
+  if [ ! -z "${!ENVIRON}" ]; then
+    export "${OPTIONAL_TF_VAR_MAP["$ENVIRON"]}"="${!ENVIRON}"
+  fi
+done
 
-if [ ! -z "${JHAAS_ICON}" ]; then
-  export TF_VAR_jh_icon="${JHAAS_ICON}"
-fi
+RESOURCE_MGMT_VARS='NB_RAM_GUARANTEE NB_CPU_GUARANTEE NB_RAM_LIMIT NB_CPU_LIMIT NB_COUNT_LIMIT NB_HOME_SIZE NB_HOME_MOUNT_PATH NS_RAM_LIMIT NS_CPU_LIMIT'
+RESOURCE_MGMT_ENABLE=1
 
-if [ ! -z "${JH_NB_DEFAULT_URL}" ]; then
-  export TF_VAR_jupyter_notebook_default_url="${JH_NB_DEFAULT_URL}"
-fi
+for ENVIRON in $RESOURCE_MGMT_VARS ; do
+  if [ -z "${!ENVIRON}" ]; then
+    RESOURCE_MGMT_ENABLE=0
+    break
+  fi
+done
 
-if [ ! -z "${JH_ADMIN_ID}" ]; then
-  export TF_VAR_jh_admin_id="${JH_ADMIN_ID}"
-fi
-
-if [ ! -z "${JH_PLACEHOLDER_REPLICAS}" ]; then
-  export TF_VAR_jh_placeholder_replicas="${JH_PLACEHOLDER_REPLICAS}"
-fi
-
-if [ ! -z "${JH_CONCURRENT_SPAWN_LIMIT}" ]; then
-  export TF_VAR_jh_concurrent_spawn_limit="${JH_CONCURRENT_SPAWN_LIMIT}"
-fi
-
-if [ ! -z "${NB_START_TIMEOUT}" ]; then
-  export TF_VAR_nb_start_timeout="${NB_START_TIMEOUT}"
-fi
-
-if [ ! -z "${S3_DATA_SECRET_NAME}" ]; then
-  export TF_VAR_secret_name="${S3_DATA_SECRET_NAME}"
-fi
-
-if [ ! -z "${S3_DATA_SECRET_NAMESPACE}" ]; then
-  export TF_VAR_secret_namespace="${S3_DATA_SECRET_NAMESPACE}"
-fi
-
-if [ ! -z "${NB_RAM_GUARANTEE}" ] \
-&& [ ! -z "${NB_CPU_GUARANTEE}" ] \
-&& [ ! -z "${NB_RAM_LIMIT}" ] \
-&& [ ! -z "${NB_CPU_LIMIT}" ] \
-&& [ ! -z "${NB_COUNT_LIMIT}" ] \
-&& [ ! -z "${NB_HOME_SIZE}" ] \
-&& [ ! -z "${NB_HOME_MOUNT_PATH}" ] \
-&& [ ! -z "${NS_RAM_LIMIT}" ] \
-&& [ ! -z "${NS_CPU_LIMIT}" ]
-then
-  export TF_VAR_nb_ram_guarantee="${NB_RAM_GUARANTEE}"
-  export TF_VAR_nb_cpu_guarantee="${NB_CPU_GUARANTEE}"
-  export TF_VAR_nb_ram_limit="${NB_RAM_LIMIT}"
-  export TF_VAR_nb_cpu_limit="${NB_CPU_LIMIT}"
-  export TF_VAR_nb_count_limit="${NB_COUNT_LIMIT}"
-  export TF_VAR_nb_home_size="${NB_HOME_SIZE}"
-  export TF_VAR_nb_home_mount_path="${NB_HOME_MOUNT_PATH}"
-  export TF_VAR_ns_ram_limit="${NS_RAM_LIMIT}"
-  export TF_VAR_ns_cpu_limit="${NS_CPU_LIMIT}"
+if [ $RESOURCE_MGMT_ENABLE -eq 1 ]; then
+  for ENVIRON in $RESOURCE_MGMT_VARS ; do
+    export "TF_VAR_${ENVIRON,,}"="${!ENVIRON}"
+  done
 fi
 
 # Setup s3 sync folders
