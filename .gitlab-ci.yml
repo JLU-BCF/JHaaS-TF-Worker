@@ -71,3 +71,6 @@ build_image:
       --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
       --destination "${HARBOR_HOST}/${HARBOR_PROJECT}/${CI_PROJECT_NAME}:${CI_COMMIT_REF_SLUG}"
       --build-arg   "ALPINE_TAG=${ALPINE_TAG}"
+      --build-arg   "http_proxy=${http_proxy}"
+      --build-arg   "https_proxy=${https_proxy}"
+      --build-arg   "no_proxy=${no_proxy}"

@@ -10,6 +10,10 @@ ARG ALPINE_TAG=latest
 # Use alpine as small base image for production usage
 FROM alpine:$ALPINE_TAG AS tofu_init
 
+ARG http_proxy
+ARG https_proxy
+ARG no_proxy
+
 # Run stuff in root homedir
 WORKDIR /root
 
@@ -26,6 +30,10 @@ RUN tofu -chdir=jhaas-terraform-config init
 
 # Use alpine as small base image for production usage
 FROM alpine:${ALPINE_TAG}
+
+ARG http_proxy
+ARG https_proxy
+ARG no_proxy
 
 # Run stuff in root homedir
 WORKDIR /root
