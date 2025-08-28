@@ -95,6 +95,14 @@ if [ ! -z "${S3_DATA_SECRET_NAMESPACE}" ]; then
   export TF_VAR_secret_namespace="${S3_DATA_SECRET_NAMESPACE}"
 fi
 
+if [ ! -z "${SHARED_VOLUMES_CONF}" ]; then
+  export TF_VAR_shared_volumes_conf="${SHARED_VOLUMES_CONF}"
+fi
+
+if [ ! -z "${FB_CHART_VERSION}" ]; then
+  export TF_VAR_fb_chart_version="${FB_CHART_VERSION}"
+fi
+
 if [ ! -z "${NB_RAM_GUARANTEE}" ] \
 && [ ! -z "${NB_CPU_GUARANTEE}" ] \
 && [ ! -z "${NB_RAM_LIMIT}" ] \
