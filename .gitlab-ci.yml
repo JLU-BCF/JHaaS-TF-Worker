@@ -7,7 +7,6 @@ variables:
   GIT_SUBMODULE_STRATEGY: "recursive"
   GIT_SUBMODULE_FORCE_HTTPS: "true"
   GIT_SUBMODULE_DEPTH: "1"
-  
 
 stages:
   - download_binaries
@@ -22,7 +21,7 @@ download_tofu:
   script:
     - echo "--------" ; echo "Desired tofu Version -- ${TOFU_VERSION}" ; echo "--------"
     - "[ -f tofu ] && echo '-------- using cache :) --------' && exit"
-    - wget "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip"
+    - wget -S "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.zip"
     - unzip "tofu_${TOFU_VERSION}_linux_amd64.zip" tofu
   cache:
     key: "tofu-${TOFU_VERSION}"
@@ -41,7 +40,7 @@ download_rclone:
   script:
     - echo "--------" ; echo "Desired rclone Version -- ${RCLONE_VERSION}" ; echo "--------"
     - "[ -f rclone ] && echo '-------- using cache :) --------' && exit"
-    - wget "https://github.com/rclone/rclone/releases/download/v${RCLONE_VERSION}/rclone-v${RCLONE_VERSION}-linux-amd64.zip"
+    - wget -S "https://github.com/rclone/rclone/releases/download/v${RCLONE_VERSION}/rclone-v${RCLONE_VERSION}-linux-amd64.zip"
     - unzip -j "rclone-v${RCLONE_VERSION}-linux-amd64.zip" "rclone-v${RCLONE_VERSION}-linux-amd64/rclone"
   cache:
     key: "rclone-${RCLONE_VERSION}"
